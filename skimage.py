@@ -13,9 +13,9 @@ class novice:
 # ================================================== 
 
     class pixel(object):
-        def __init__(self, pic, image, x, y, rgb):
+        def __init__(self, pic, data, x, y, rgb):
             self.__picture = pic
-            self.__image = image
+            self.__data = data
             self.__x = x
             self.__y = y
             self.__red = rgb[0] / 255.0
@@ -91,8 +91,8 @@ class novice:
 
         def __setpixel(self):
             """Sets the actual pixel value in the picture"""
-            self.__image.putpixel((self.__x, self.__y),
-                    (int(self.red * 255), int(self.green * 255), int(self.blue * 255)))
+            self.__data[self.__x, self.__y] = \
+                    (int(self.red * 255), int(self.green * 255), int(self.blue * 255))
 
             # Modified pictures lose their paths
             self.__picture._picture__path = None
@@ -110,6 +110,7 @@ class novice:
             # We convert the image to RGB automatically so
             # (r, g, b) tuples can be used everywhere.
             self.__image = Image.open(path).convert("RGB")
+            self.__data = self.__image.load()
             self.format = self.__image.format
             self.__modified = False
 
@@ -140,6 +141,7 @@ class novice:
                 # Don't resize if no change in size
                 if (value[0] != self.width) or (value[1] != self.height):
                     self.__image = self.__image.resize(value)
+                    self.__data = self.__image.load()
                     self.__modified = True
                     self.__path = None
             except TypeError:
@@ -167,8 +169,8 @@ class novice:
 
         def __makepixel(self, x, y):
             """Creates a novice.pixel object for a given x, y location"""
-            rgb = self.__image.getpixel((x, y))
-            return novice.pixel(self, self.__image, x, y, rgb)
+            rgb = self.__data[x, y]
+            return novice.pixel(self, self.__data, x, y, rgb)
 
         def __iter__(self):
             """Iterates over all pixels in the image"""
