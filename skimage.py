@@ -29,7 +29,7 @@ class novice:
 
         @property
         def y(self):
-            """Gets the vertical location (top = 0)"""
+            """Gets the vertical location (bottom = 0)"""
             return self.__y
 
         @property
@@ -90,8 +90,11 @@ class novice:
                 raise ValueError("Expected a number between 0 and 1, but got {0} instead!".format(pixel))
 
         def __setpixel(self):
-            """Sets the actual pixel value in the picture"""
-            self.__data[self.__x, self.__y] = \
+            """
+            Sets the actual pixel value in the picture.
+            NOTE: Using Cartesian coordinate system!
+            """
+            self.__data[self.__x, self.__picture.height - self.__y - 1] = \
                     (int(self.red * 255), int(self.green * 255), int(self.blue * 255))
 
             # Modified pictures lose their paths
@@ -178,8 +181,11 @@ class novice:
             self.size = (int(value * aspect), value)
 
         def __makepixel(self, x, y):
-            """Creates a novice.pixel object for a given x, y location"""
-            rgb = self.__data[x, y]
+            """
+            Creates a novice.pixel object for a given x, y location.
+            NOTE: Using Cartesian coordinate system!
+            """
+            rgb = self.__data[x, self.height - y - 1]
             return novice.pixel(self, self.__data, x, y, rgb)
 
         def __iter__(self):
