@@ -162,23 +162,21 @@ class novice:
 
         @property
         def width(self):
-            """Gets or sets the width of the image (maintains correct aspect)"""
+            """Gets or sets the width of the image"""
             return self.size[0]
 
         @width.setter
         def width(self, value):
-            aspect = float(self.width) / float(self.height)
-            self.size = (value, int(value / aspect))
+            self.size = (value, self.height)
 
         @property
         def height(self):
-            """Gets or sets the height of the image (maintains correct aspect)"""
+            """Gets or sets the height of the image"""
             return self.size[1]
 
         @height.setter
         def height(self, value):
-            aspect = float(self.width) / float(self.height)
-            self.size = (int(value * aspect), value)
+            self.size = (self.width, value)
 
         def __makepixel(self, x, y):
             """
