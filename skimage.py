@@ -106,19 +106,24 @@ class novice:
     class picture(object):
         def __init__(self, path):
             self.__path = path
+            image = Image.open(path)
+            self.__format = image.format
 
             # We convert the image to RGB automatically so
             # (r, g, b) tuples can be used everywhere.
-            self.__image = Image.open(path).convert("RGB")
+            self.__image = image.convert("RGB")
             self.__data = self.__image.load()
-            self.format = self.__image.format
             self.__modified = False
 
         def save(self, path):
             """Saves the picture to the given path."""
             self.__image.save(path)
             self.__modified = False
-            self.__path = path
+            self.__path = os.path.abspath(path)
+
+            # Need to re-open the image to get the format
+            # for some reason (likely because we converted to RGB).
+            self.__format = Image.open(path).format
 
         @property
         def path(self):
@@ -129,6 +134,11 @@ class novice:
         def modified(self):
             """Gets a value indicating if the picture has changed"""
             return self.__modified
+
+        @property
+        def format(self):
+            """Gets the format of the picture (e.g., PNG)"""
+            return self.__format
 
         @property
         def size(self):

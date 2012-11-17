@@ -16,4 +16,5 @@ print picture.path                    # picture no longer corresponds to file
 picture[0:20, 0:20] = (0., 0., 0.)    # overwrite lower-left rectangle with black
 picture.save('sample-bluegreen.jpg')  # guess file type from suffix
 print picture.path                    # picture now corresponds to file
-print picture.modified                # and is now in sync
+print picture.format                  # ...has a different format
+print picture.modified                # ...and is now in sync
