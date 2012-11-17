@@ -1,11 +1,16 @@
 import os
 from PIL import Image
-from itertools import repeat, islice, izip
+from itertools import repeat, islice, product
 
 class novice:
     @staticmethod
     def open(path):
+        """
+        Creates a new picture object from the given image path
+        """
         return novice.picture(os.path.abspath(path))
+
+# ================================================== 
 
     class pixel(object):
         def __init__(self, pic, image, x, y, rgb):
@@ -19,14 +24,17 @@ class novice:
 
         @property
         def x(self):
+            """Gets the horizontal location (left = 0)"""
             return self.__x
 
         @property
         def y(self):
+            """Gets the vertical location (top = 0)"""
             return self.__y
 
         @property
         def red(self):
+            """Gets or sets the red component"""
             return self.__red
 
         @red.setter
@@ -37,6 +45,7 @@ class novice:
 
         @property
         def green(self):
+            """Gets or sets the green component"""
             return self.__green
 
         @green.setter
@@ -47,6 +56,7 @@ class novice:
 
         @property
         def blue(self):
+            """Gets or sets the blue component"""
             return self.__blue
 
         @blue.setter
@@ -61,6 +71,7 @@ class novice:
 
         @rgb.setter
         def rgb(self, value):
+            """Gets or sets the color with an (r, g, b) tuple"""
             for v in value:
                 self.__validate(v)
 
@@ -70,6 +81,7 @@ class novice:
             self.__setpixel()
 
         def __validate(self, pixel):
+            """Verifies that the pixel value is in [0, 1]"""
             try:
                 pixel = float(pixel)
                 if (pixel < 0) or (pixel > 1):
@@ -78,35 +90,48 @@ class novice:
                 raise ValueError("Expected a number between 0 and 1, but got {0} instead!".format(pixel))
 
         def __setpixel(self):
+            """Sets the actual pixel value in the picture"""
             self.__image.putpixel((self.__x, self.__y),
                     (int(self.red * 255), int(self.green * 255), int(self.blue * 255)))
+
+            # Modified pictures lose their paths
+            self.__picture._picture__path = None
             self.__picture._picture__modified = True
 
         def __repr__(self):
             return "pixel (red: {0}, green: {1}, blue: {2})".format(self.red, self.green, self.blue)
 
+# ================================================== 
+
     class picture(object):
         def __init__(self, path):
             self.__path = path
+
+            # We convert the image to RGB automatically so
+            # (r, g, b) tuples can be used everywhere.
             self.__image = Image.open(path).convert("RGB")
             self.format = self.__image.format
             self.__modified = False
 
         def save(self, path):
+            """Saves the picture to the given path."""
             self.__image.save(path)
             self.__modified = False
             self.__path = path
 
         @property
         def path(self):
+            """Gets the path of the picture"""
             return self.__path
 
         @property
         def modified(self):
+            """Gets a value indicating if the picture has changed"""
             return self.__modified
 
         @property
         def size(self):
+            """Gets or sets the size of the picture with a (width, height) tuple"""
             return self.__image.size
 
         @size.setter
@@ -122,6 +147,7 @@ class novice:
 
         @property
         def width(self):
+            """Gets or sets the width of the image (maintains correct aspect)"""
             return self.size[0]
 
         @width.setter
@@ -131,6 +157,7 @@ class novice:
 
         @property
         def height(self):
+            """Gets or sets the height of the image (maintains correct aspect)"""
             return self.size[1]
 
         @height.setter
@@ -139,20 +166,30 @@ class novice:
             self.size = (int(value * aspect), value)
 
         def __makepixel(self, x, y):
+            """Creates a novice.pixel object for a given x, y location"""
             rgb = self.__image.getpixel((x, y))
             return novice.pixel(self, self.__image, x, y, rgb)
 
         def __iter__(self):
+            """Iterates over all pixels in the image"""
             for x in xrange(self.width):
                 for y in xrange(self.height):
                     yield self.__makepixel(x, y)
 
         def __getpixels(self, xs, ys):
-            for (x, y) in izip(xs, ys):
+            """
+            Yields pixel objects for the product of the x and y iterators.
+            It's critical that product() is used here because one of the
+            iterators may repeat forever.
+            """
+            for (x, y) in product(xs, ys):
                 yield self[x, y]
 
         def __getitem__(self, key):
+            """Gets pixels using 2D int or slice notations"""
             if isinstance(key, tuple):
+
+                # self[x, y]
                 if isinstance(key[0], int) and isinstance(key[1], int):
                     x = key[0]
                     y = key[1]
@@ -162,16 +199,19 @@ class novice:
 
                     return self.__makepixel(x, y)
 
+                # self[x, ystart:ystop:ystep]
                 elif isinstance(key[0], int) and isinstance(key[1], slice):
                     sly = key[1]
                     return self.__getpixels(repeat(key[0]),
                                             islice(xrange(self.height), sly.start, sly.stop, sly.step))
 
+                # self[xstart:xstop:xstep, y]
                 elif isinstance(key[0], slice) and isinstance(key[1], int):
                     slx = key[0]
                     return self.__getpixels(islice(xrange(self.width), slx.start, slx.stop, slx.step),
                                             repeat(key[1]))
 
+                # self[xstart:xstop:xstep, ystart:ystop:ystep]
                 elif isinstance(key[0], slice) and isinstance(key[1], slice):
                     slx = key[0]
                     sly = key[1]
@@ -181,28 +221,39 @@ class novice:
             raise TypeError("Invalid key type")
 
         def __setpixels(self, xs, ys, value):
-            for (x, y) in izip(xs, ys):
+            """
+            Sets pixel values for locations in the product of the x and y iterators.
+            It's critical that product() is used here because one of the
+            iterators may repeat forever.
+            """
+            for (x, y) in product(xs, ys):
                 pixel = self[x, y]
                 pixel.rgb = value
 
         def __setitem__(self, key, value):
+            """Sets pixelvalues using 2D int or slice notations"""
             if isinstance(key, tuple):
+
+                # self[x, y]
                 if isinstance(key[0], int) and isinstance(key[1], int):
                     pixel = self[key[0], key[1]]
                     pixel.rgb = value
 
+                # self[x, ystart:ystop:ystep]
                 elif isinstance(key[0], int) and isinstance(key[1], slice):
                     sly = key[1]
                     self.__setpixels(repeat(key[0]),
                                      islice(xrange(self.height), sly.start, sly.stop, sly.step),
                                      value)
 
+                # self[xstart:xstop:xstep, y]
                 elif isinstance(key[0], slice) and isinstance(key[1], int):
                     slx = key[0]
                     self.__setpixels(islice(xrange(self.width), slx.start, slx.stop, slx.step),
                                      repeat(key[1]),
                                      value)
 
+                # self[xstart:xstop:xstep, ystart:ystop:ystep]
                 elif isinstance(key[0], slice) and isinstance(key[1], slice):
                     slx = key[0]
                     sly = key[1]
@@ -215,34 +266,3 @@ class novice:
         def __repr__(self):
             return "picture (format: {0}, path: {1}, modified: {2})".format(self.format, self.path, self.modified)
 
-
-if __name__ == "__main__":
-    picture = novice.open("sample.png")
-    print "Format:", picture.format
-    print "Path:", picture.path
-    print "Size:", picture.size
-    print "Modified:", picture.modified
-
-    print ""
-    print "Changing width"
-    picture.width = picture.width / 2
-    print "Path:", picture.path
-    print "Size:", picture.size
-    print "Modified:", picture.modified
-
-    print ""
-    print "Saving"
-    picture.save("sample-small.jpg")
-    print "Path:", picture.path
-    print "Size:", picture.size
-    print "Modified:", picture.modified
-
-    print ""
-    print "Changing pixels"
-    for pixel in picture:
-        if (pixel.red > 0.5) and (pixel.x < picture.width):
-            pixel.red /= 2 
-
-    print "Modified:", picture.modified
-    picture.save("sample-halfred.jpg")
-    print "Path:", picture.path
