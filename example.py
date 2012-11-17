@@ -13,7 +13,7 @@ for pixel in picture:                 # can iterate over pixels
    
 print picture.modified                # pictures know if their pixels are dirty
 print picture.path                    # picture no longer corresponds to file
-picture[0:20, 0:20] = (0., 0., 0.)    # overwrite lower-left rectangle with black
+picture[0:20, 0:20] = (0., 0., 0.)    # overwrite upper-left rectangle with black
 picture.save('sample-bluegreen.jpg')  # guess file type from suffix
 print picture.path                    # picture now corresponds to file
 print picture.format                  # ...has a different format

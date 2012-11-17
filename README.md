@@ -31,7 +31,7 @@ Example
     True
     >>> print picture.path                    # picture no longer corresponds to file
     None
-    >>> picture[0:20, 0:20] = (0., 0., 0.)    # overwrite lower-left rectangle with black
+    >>> picture[0:20, 0:20] = (0., 0., 0.)    # overwrite upper-left rectangle with black
     >>> picture.save('sample-bluegreen.jpg')  # guess file type from suffix
     >>> print picture.path                    # picture now corresponds to file
     '/Users/example/sample-bluegreen.jpg'
