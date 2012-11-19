@@ -1,6 +1,6 @@
 import os
 from PIL import Image
-from itertools import repeat, islice, product
+from itertools import islice, imap, product
 
 class novice:
     @staticmethod
@@ -178,11 +178,12 @@ class novice:
         def height(self, value):
             self.size = (self.width, value)
 
-        def __makepixel(self, x, y):
+        def __makepixel(self, xy):
             """
             Creates a novice.pixel object for a given x, y location.
             NOTE: Using Cartesian coordinate system!
             """
+            (x,y) = xy
             rgb = self.__data[x, self.height - y - 1]
             return novice.pixel(self, self.__data, x, y, rgb)
 
@@ -190,94 +191,66 @@ class novice:
             """Iterates over all pixels in the image"""
             for x in xrange(self.width):
                 for y in xrange(self.height):
-                    yield self.__makepixel(x, y)
+                    yield self.__makepixel((x, y))
 
-        def __getpixels(self, xs, ys):
+        def __keys(self, key):
             """
-            Yields pixel objects for the product of the x and y iterators.
-            It's critical that product() is used here because one of the
-            iterators may repeat forever.
+            Takes a key for __getitem__ or __setitem__ and
+            validates it.  If valid, returns either a pair of ints
+            or an iterator of pairs of ints.
             """
-            for (x, y) in product(xs, ys):
-                yield self[x, y]
+            if isinstance(key, tuple) and len(key) == 2:
+                slx = key[0]
+                sly = key[1]
+
+                if ((isinstance(slx, int) or isinstance(slx, slice)) and
+                    (isinstance(sly, int) or isinstance(sly, slice))):
+                    if isinstance(slx, int):
+                        if (slx < 0) or (slx >= self.width):
+                            raise IndexError("Index out of range")
+
+                    if isinstance(sly, int):
+                        if (sly < 0) or (sly >= self.height):
+                            raise IndexError("Index out of range")
+
+                    # self[x, y]
+                    if isinstance(slx, int) and isinstance(sly, int):
+                        return (slx, sly)
+                    
+                    if isinstance(slx, int):
+                        slx = [slx]
+                    else: # slice
+                        slx = islice(xrange(self.width), slx.start, slx.stop, slx.step)
+                        
+                    if isinstance(sly, int):
+                        sly = [sly]
+                    else: # slice
+                        sly = islice(xrange(self.height), sly.start, sly.stop, sly.step)
+
+                    return product(slx, sly)
+
+            # if either left or right is not an int or a slice, or
+            # if the key is not a pair, fall through
+            raise TypeError("Invalid key type")
 
         def __getitem__(self, key):
             """Gets pixels using 2D int or slice notations"""
-            if isinstance(key, tuple):
-
-                # self[x, y]
-                if isinstance(key[0], int) and isinstance(key[1], int):
-                    x = key[0]
-                    y = key[1]
-                    if ((x < 0) or (x >= self.width) or
-                        (y < 0) or (y >= self.height)):
-                        raise IndexError("Index out of range")                        
-
-                    return self.__makepixel(x, y)
-
-                # self[x, ystart:ystop:ystep]
-                elif isinstance(key[0], int) and isinstance(key[1], slice):
-                    sly = key[1]
-                    return self.__getpixels(repeat(key[0]),
-                                            islice(xrange(self.height), sly.start, sly.stop, sly.step))
-
-                # self[xstart:xstop:xstep, y]
-                elif isinstance(key[0], slice) and isinstance(key[1], int):
-                    slx = key[0]
-                    return self.__getpixels(islice(xrange(self.width), slx.start, slx.stop, slx.step),
-                                            repeat(key[1]))
-
-                # self[xstart:xstop:xstep, ystart:ystop:ystep]
-                elif isinstance(key[0], slice) and isinstance(key[1], slice):
-                    slx = key[0]
-                    sly = key[1]
-                    return self.__getpixels(islice(xrange(self.width), slx.start, slx.stop, slx.step),
-                                            islice(xrange(self.height), sly.start, sly.stop, sly.step))
-
-            raise TypeError("Invalid key type")
-
-        def __setpixels(self, xs, ys, value):
-            """
-            Sets pixel values for locations in the product of the x and y iterators.
-            It's critical that product() is used here because one of the
-            iterators may repeat forever.
-            """
-            for (x, y) in product(xs, ys):
-                pixel = self[x, y]
-                pixel.rgb = value
+            keys =self.__keys(key)
+            if isinstance(keys, tuple):
+                return self.__makepixel(keys)
+            else:
+                return imap(self.__makepixel, keys)
 
         def __setitem__(self, key, value):
             """Sets pixelvalues using 2D int or slice notations"""
-            if isinstance(key, tuple):
-
-                # self[x, y]
-                if isinstance(key[0], int) and isinstance(key[1], int):
-                    pixel = self[key[0], key[1]]
-                    pixel.rgb = value
-
-                # self[x, ystart:ystop:ystep]
-                elif isinstance(key[0], int) and isinstance(key[1], slice):
-                    sly = key[1]
-                    self.__setpixels(repeat(key[0]),
-                                     islice(xrange(self.height), sly.start, sly.stop, sly.step),
-                                     value)
-
-                # self[xstart:xstop:xstep, y]
-                elif isinstance(key[0], slice) and isinstance(key[1], int):
-                    slx = key[0]
-                    self.__setpixels(islice(xrange(self.width), slx.start, slx.stop, slx.step),
-                                     repeat(key[1]),
-                                     value)
-
-                # self[xstart:xstop:xstep, ystart:ystop:ystep]
-                elif isinstance(key[0], slice) and isinstance(key[1], slice):
-                    slx = key[0]
-                    sly = key[1]
-                    self.__setpixels(islice(xrange(self.width), slx.start, slx.stop, slx.step),
-                                     islice(xrange(self.height), sly.start, sly.stop, sly.step),
-                                     value)
+            keys = self.__keys(key)
+            if isinstance(keys, tuple):
+                pixel = self[keys[0], keys[1]]
+                pixel.rgb = value
             else:
-                raise TypeError("Invalid key type")
+                for (x,y) in keys:
+                    pixel = self[x,y]
+                    pixel.rgb = value
 
         def __repr__(self):
             return "picture (format: {0}, path: {1}, modified: {2})".format(self.format, self.path, self.modified)
