@@ -18,9 +18,9 @@ class novice:
             self.__data = data
             self.__x = x
             self.__y = y
-            self.__red = rgb[0] / 255.0
-            self.__green = rgb[1] / 255.0
-            self.__blue = rgb[2] / 255.0
+            self.__red = self.__validate(rgb[0])
+            self.__green = self.__validate(rgb[1])
+            self.__blue = self.__validate(rgb[2])
 
         @property
         def x(self):
@@ -39,8 +39,7 @@ class novice:
 
         @red.setter
         def red(self, value):
-            self.__validate(value)
-            self.__red = value
+            self.__red = self.__validate(value)
             self.__setpixel()
 
         @property
@@ -50,8 +49,7 @@ class novice:
 
         @green.setter
         def green(self, value):
-            self.__validate(value)
-            self.__green = value
+            self.__green = self.__validate(value)
             self.__setpixel()
 
         @property
@@ -61,8 +59,7 @@ class novice:
 
         @blue.setter
         def blue(self, value):
-            self.__validate(value)
-            self.__blue = value
+            self.__blue = self.__validate(value)
             self.__setpixel()
 
         @property
@@ -80,14 +77,16 @@ class novice:
             self.__blue = value[2]
             self.__setpixel()
 
-        def __validate(self, pixel):
-            """Verifies that the pixel value is in [0, 1]"""
+        def __validate(self, value):
+            """Verifies that the pixel value is in [0, 255]"""
             try:
-                pixel = float(pixel)
-                if (pixel < 0) or (pixel > 1):
+                value = int(value)
+                if (value < 0) or (value > 255):
                     raise ValueError()
             except ValueError:
-                raise ValueError("Expected a number between 0 and 1, but got {0} instead!".format(pixel))
+                raise ValueError("Expected an integer between 0 and 255, but got {0} instead!".format(value))
+
+            return value
 
         def __setpixel(self):
             """
@@ -95,7 +94,7 @@ class novice:
             NOTE: Using Cartesian coordinate system!
             """
             self.__data[self.__x, self.__picture.height - self.__y - 1] = \
-                    (int(self.red * 255), int(self.green * 255), int(self.blue * 255))
+                    (self.red, self.green, self.blue)
 
             # Modified pictures lose their paths
             self.__picture._picture__path = None

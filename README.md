@@ -25,7 +25,7 @@ Example
     665
     >>> picture.size = (200, 250)             # changing size automatically resizes
     >>> for pixel in picture:                 # can iterate over pixels
-    >>> ... if ((pixel.red > 0.5) and         # pixels have RGB (values are 0.0-1.0)...
+    >>> ... if ((pixel.red > 128) and         # pixels have RGB (values are 0-255)...
     >>> ...     (pixel.x < picture.width)):   # ...and know where they are
     >>> ...     pixel.red /= 2                # pixel is an alias into the picture
     >>> ...
@@ -33,7 +33,7 @@ Example
     True
     >>> print picture.path                    # picture no longer corresponds to file
     None
-    >>> picture[0:20, 0:20] = (0., 0., 0.)    # overwrite lower-left rectangle with black
+    >>> picture[0:20, 0:20] = (0, 0, 0)       # overwrite lower-left rectangle with black
     >>> picture.save('sample-bluegreen.jpg')  # guess file type from suffix
     >>> print picture.path                    # picture now corresponds to file
     '/Users/example/sample-bluegreen.jpg'
