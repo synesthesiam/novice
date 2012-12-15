@@ -1,6 +1,7 @@
 import os
 from PIL import Image
 from itertools import islice, imap, product
+from io import BytesIO
 
 class novice:
     @staticmethod
@@ -176,6 +177,20 @@ class novice:
         @height.setter
         def height(self, value):
             self.size = (self.width, value)
+
+        def show(self):
+            """Returns an IPython image of the picture for display in an IPython notebook"""
+            from IPython.core.display import Image as IPImage
+
+            if self.path:
+                # Picture hasn't been modified, just use the file directly
+                return IPImage(filename=self.path)
+            else:
+                # Convert picture to in-memory PNG
+                data = BytesIO()
+                self.__image.save(data, format="png")
+                data.seek(0)
+                return IPImage(data=data.getvalue(), format="png", embed=True)
 
         def __makepixel(self, xy):
             """
