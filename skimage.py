@@ -106,6 +106,68 @@ class novice:
 
 # ================================================== 
 
+    class pixelgroup(object):
+        def __init__(self, pixels):
+            self.__pixels = pixels
+
+        @property
+        def x(self):
+            """Gets the horizontal locations (left = 0)"""
+            return [p.x for p in self]
+
+        @property
+        def y(self):
+            """Gets the vertical locations (bottom = 0)"""
+            return [p.y for p in self]
+
+        @property
+        def red(self):
+            """Gets or sets the red component"""
+            return [p.red for p in self]
+
+        @red.setter
+        def red(self, value):
+            for p in self:
+                p.red = value
+
+        @property
+        def green(self):
+            """Gets or sets the green component"""
+            return [p.green for p in self]
+
+        @green.setter
+        def green(self, value):
+            for p in self:
+                p.green = value
+
+        @property
+        def blue(self):
+            """Gets or sets the blue component"""
+            return [p.blue for p in self]
+
+        @blue.setter
+        def blue(self, value):
+            for p in self:
+                p.blue = value
+
+        @property
+        def rgb(self):
+            return [p.rgb for p in self]
+
+        @rgb.setter
+        def rgb(self, value):
+            """Gets or sets the color with an (r, g, b) tuple"""
+            for p in self:
+                p.rgb = value
+
+        def __iter__(self):
+            return iter(self.__pixels)
+
+        def __repr__(self):
+            return "pixelgroup ({0} pixels)".format(len(self.__pixels))
+
+# ================================================== 
+
     class picture(object):
         def __init__(self, path):
             self.__path = path
@@ -118,9 +180,11 @@ class novice:
             self.__data = self.__image.load()
             self.__modified = False
 
+            self.__inflation = 1
+
         def save(self, path):
             """Saves the picture to the given path."""
-            self.__image.save(path)
+            self.__inflate(self.__image).save(path)
             self.__modified = False
             self.__path = os.path.abspath(path)
 
@@ -178,17 +242,32 @@ class novice:
         def height(self, value):
             self.size = (self.width, value)
 
+        @property
+        def inflation(self):
+            """Gets or sets the inflation factor (each pixel will be an NxN block for factor N)"""
+            return self.__inflation
+
+        @inflation.setter
+        def inflation(self, value):
+            try:
+                value = int(value)
+                if value < 0:
+                    raise ValueError()
+                self.__inflation = value
+            except ValueError:
+                raise ValueError("Expected inflation factor to be an integer greater than zero")
+
         def show(self):
             """Returns an IPython image of the picture for display in an IPython notebook"""
             from IPython.core.display import Image as IPImage
 
-            if self.path:
+            if self.path and self.inflation == 1:
                 # Picture hasn't been modified, just use the file directly
                 return IPImage(filename=self.path)
             else:
                 # Convert picture to in-memory PNG
                 data = BytesIO()
-                self.__image.save(data, format="png")
+                self.__inflate(self.__image).save(data, format="png")
                 data.seek(0)
                 return IPImage(data=data.getvalue(), format="png", embed=True)
 
@@ -200,6 +279,18 @@ class novice:
             (x,y) = xy
             rgb = self.__data[x, self.height - y - 1]
             return novice.pixel(self, self.__data, x, y, rgb)
+
+        def __inflate(self, img):
+            """Returns resized image using inflation factor (nearest neighbor)"""
+            return img.resize((self.width * self.__inflation,
+                self.height * self.__inflation), Image.NEAREST)
+
+        def __negidx(self, idx, bound):
+            """Handles negative indices by wrapping around bound"""
+            if (idx is None) or idx >= 0:
+                return idx
+            else:
+                return bound + idx
 
         def __iter__(self):
             """Iterates over all pixels in the image"""
@@ -220,10 +311,12 @@ class novice:
                 if ((isinstance(slx, int) or isinstance(slx, slice)) and
                     (isinstance(sly, int) or isinstance(sly, slice))):
                     if isinstance(slx, int):
+                        slx = self.__negidx(slx, self.width)
                         if (slx < 0) or (slx >= self.width):
                             raise IndexError("Index out of range")
 
                     if isinstance(sly, int):
+                        sly = self.__negidx(sly, self.height)
                         if (sly < 0) or (sly >= self.height):
                             raise IndexError("Index out of range")
 
@@ -233,13 +326,17 @@ class novice:
                     
                     if isinstance(slx, int):
                         slx = [slx]
-                    else: # slice
-                        slx = islice(xrange(self.width), slx.start, slx.stop, slx.step)
+                    else: # slice (allow negative indices)
+                        start = self.__negidx(slx.start, self.width)
+                        stop  = self.__negidx(slx.stop,  self.width)
+                        slx = islice(xrange(self.width), start, stop, slx.step)
                         
                     if isinstance(sly, int):
                         sly = [sly]
-                    else: # slice
-                        sly = islice(xrange(self.height), sly.start, sly.stop, sly.step)
+                    else: # slice (allow negative indices)
+                        start = self.__negidx(sly.start, self.height)
+                        stop  = self.__negidx(sly.stop,  self.height)
+                        sly = islice(xrange(self.height), start, stop, sly.step)
 
                     return product(slx, sly)
 
@@ -249,11 +346,11 @@ class novice:
 
         def __getitem__(self, key):
             """Gets pixels using 2D int or slice notations"""
-            keys =self.__keys(key)
+            keys = self.__keys(key)
             if isinstance(keys, tuple):
                 return self.__makepixel(keys)
             else:
-                return imap(self.__makepixel, keys)
+                return novice.pixelgroup(map(self.__makepixel, keys))
 
         def __setitem__(self, key, value):
             """Sets pixelvalues using 2D int or slice notations"""
