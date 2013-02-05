@@ -207,6 +207,7 @@ class novice:
                     color = (0, 0, 0)
                 image = Image.new("RGB", size, color)
                 self.__image = image
+                self.__data = self.__image.load()
                 self.__path = None
                 self.__format = None
 
