@@ -9,7 +9,15 @@ class novice:
         """
         Creates a new picture object from the given image path
         """
-        return novice.picture(os.path.abspath(path))
+        return novice.picture(path=os.path.abspath(path))
+
+    @staticmethod
+    def new(size, color=None):
+        """
+        Create a new RGB picture of the given size, initialized to the
+        given color or to black if none is provided.
+        """
+        return novice.picture(size=size, color=color)
 
 # ================================================== 
 
@@ -169,17 +177,45 @@ class novice:
 # ================================================== 
 
     class picture(object):
-        def __init__(self, path):
-            self.__path = path
-            image = Image.open(path)
-            self.__format = image.format
+        def __init__(self, path=None, size=None, color=None):
+            """
+            If 'path' is provided, open that file (the normal case).
+            If 'size' is provided instead, create an image of that size.
+            If 'color' is provided as well as 'size', initialize the
+            created image to that color; otherwise, initialize to black.
+            Cannot provide both 'path' and 'size'.
+            Can only provide 'color' if 'size' provided.
+            """
 
-            # We convert the image to RGB automatically so
-            # (r, g, b) tuples can be used everywhere.
-            self.__image = image.convert("RGB")
-            self.__data = self.__image.load()
+            # Can only provide either path or size, but not both.
+            if path and size:
+                assert False, "Can only provide either path or size, not both."
+
+            # Opening a particular file.  Convert the image to RGB
+            # automatically so (r, g, b) tuples can be used
+            # everywhere.
+            elif path is not None:
+                image = Image.open(path)
+                self.__image = image.convert("RGB")
+                self.__data = self.__image.load()
+                self.__path = path
+                self.__format = image.format
+
+            # Creating a particular size of image.
+            elif size is not None:
+                if color is None:
+                    color = (0, 0, 0)
+                image = Image.new("RGB", size, color)
+                self.__image = image
+                self.__path = None
+                self.__format = None
+
+            # Must have provided either 'path' or 'size'.
+            else:
+                assert False, "Must provide one of path or size."
+
+            # Common setup.
             self.__modified = False
-
             self.__inflation = 1
 
         def save(self, path):
@@ -190,6 +226,7 @@ class novice:
 
             # Need to re-open the image to get the format
             # for some reason (likely because we converted to RGB).
+            # FIXME: figure out why this is?
             self.__format = Image.open(path).format
 
         @property
