@@ -1,10 +1,10 @@
-skimage
+novice
 =======
 A special Python image submodule for beginners.
 
 Description
 -----------
-skimage is a simple wrapper around the Python Image Library (PIL) for beginners.
+novice is a simple wrapper around the Python Image Library (PIL) for beginners.
 It allows for easy loading, manipulating, and saving of image files.
 
 **NOTE: This module uses the Cartesian coordinate system!**
@@ -12,11 +12,11 @@ It allows for easy loading, manipulating, and saving of image files.
 Example
 -------
 
-    >>> from skimage import novice            # special submodule for beginners
+    >>> import novice                         # special submodule for beginners
 
     >>> picture = novice.open('sample.png')   # create a picture object from a file
     >>> print picture.format                  # pictures know their format...
-    'PNG'
+    'png'
     >>> print picture.path                    # ...and where they came from...
     '/Users/example/sample.png'
     >>> print picture.size                    # ...and their size
@@ -38,6 +38,6 @@ Example
     >>> print picture.path                    # picture now corresponds to file
     '/Users/example/sample-bluegreen.jpg'
     >>> print picture.format                  # ...has a different format
-    JPEG
+    jpeg
     >>> print picture.modified                # and is now in sync
     False
