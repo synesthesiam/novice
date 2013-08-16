@@ -151,8 +151,7 @@ class Pixel(object):
         Sets the actual pixel value in the picture.
         NOTE: Using Cartesian coordinate system!
         """
-        # dimensions are flipped: y, x
-        self._image[self._picture.height - self._y - 1, self._x] = \
+        self._image[self._x, self._picture.height - self._y - 1] = \
                 (self.red, self.green, self.blue)
 
         # Modified pictures lose their paths
@@ -184,8 +183,8 @@ class PixelGroup(object):
             if dim_slice.stop is not None and dim_slice.stop < 0:
                 raise IndexError("Negative slicing not supported")
 
-            if dim_slice.step is not None and dim_slice.step != 1:
-                raise IndexError("Only a step size of 1 is supported")
+            #if dim_slice.step is not None and dim_slice.step != 1:
+                #raise IndexError("Only a step size of 1 is supported")
 
         # ===========
         # Flip y axis
@@ -199,8 +198,7 @@ class PixelGroup(object):
 
         key = (key[0], slice(stop, start + 1, y_slice.step))
 
-        # dimensions are flipped: y, x
-        self._key = (key[1], key[0])
+        self._key = (key[0], key[1])
         self._image = pic._image
 
         # Save slice for _getdim operations.
@@ -208,7 +206,7 @@ class PixelGroup(object):
         self._slice = self._image[self._key[0], self._key[1]]
 
         shape = self._getdim(0).shape
-        self.size = (shape[1], shape[0])
+        self.size = (shape[0], shape[1])
 
     def _getdim(self, dim):
         return self._slice[:, :, dim]
@@ -294,8 +292,7 @@ class Picture(object):
             if color is None:
                 color = (0, 0, 0)
 
-            # dimensions are flipped: y, x
-            self._image = np.zeros((size[1], size[0], 3), "uint8")
+            self._image = np.zeros((size[0], size[1], 3), "uint8")
             self._image[:, :] = color
             self._path = None
             self._format = None
@@ -349,16 +346,14 @@ class Picture(object):
     @property
     def size(self):
         """Gets or sets the size of the picture with a (width, height) tuple"""
-        # dimensions are flipped: y, x
-        return (self._image.shape[1], self._image.shape[0])
+        return (self._image.shape[0], self._image.shape[1])
 
     @size.setter
     def size(self, value):
         try:
             # Don't resize if no change in size
             if (value[0] != self.width) or (value[1] != self.height):
-                # dimensions are flipped: y, x
-                new_size = (int(value[1]), int(value[0]))
+                new_size = (int(value[0]), int(value[1]))
                 self._image = np.array(Image.fromarray(self._image).resize(new_size))
 
                 self._modified = True
@@ -416,7 +411,7 @@ class Picture(object):
         Creates a Pixel object for a given x, y location.
         NOTE: Using Cartesian coordinate system!
         """
-        rgb = self._image[self.height - xy[1] - 1, xy[0]]
+        rgb = self._image[xy[0], self.height - xy[1] - 1]
         return Pixel(self, self._image, xy[0], xy[1], rgb)
 
     def _inflate(self, img):
