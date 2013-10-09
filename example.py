@@ -1,4 +1,4 @@
-import novice                         # special submodule for beginners
+import image_novice as novice         # special submodule for beginners
 
 picture = novice.open('sample.png')   # create a picture object from a file
 print picture.format                  # pictures know their format...

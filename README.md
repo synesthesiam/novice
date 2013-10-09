@@ -1,5 +1,5 @@
-novice
-=======
+Image Novice
+============
 A special Python image submodule for beginners.
 
 Description

@@ -1,13 +1,13 @@
-======
-novice
-======
+============
+Image novice
+============
 
 A special Python image submodule for beginners.
 
 Description
 ===========
 
-novice is a simple wrapper around the Python Image Library (PIL) for
+image_novice is a simple wrapper around the Python Image Library (PIL) for
 beginners. It allows for easy loading, manipulating, and saving of image
 files.
 
@@ -18,7 +18,7 @@ Example
 
 ::
 
-    >>> import novice                         # special submodule for beginners
+    >>> import image_novice as novice         # special submodule for beginners
 
     >>> picture = novice.open('sample.png')   # create a picture object from a file
     >>> print picture.format                  # pictures know their format...
