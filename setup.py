@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='image_novice',
-    version='0.1.0',
+    version='0.1.1',
     author='Michael Hansen',
     author_email='hansen.mike@gmail.com',
     packages=['image_novice'],
@@ -12,6 +12,6 @@ setup(
     long_description=open('README.txt').read(),
     install_requires=[
         "numpy >= 1.7.1",
-        "pillow >= 1.1.7",
+        "pillow >= 2.1.0",
     ],
 )

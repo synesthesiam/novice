@@ -1,1 +1,2 @@
 0.1.0, 2013-10-09 -- Initial release.
+0.1.1, 2013-11-09 -- Updated Pillow version to 2.1.0
