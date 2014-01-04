@@ -127,12 +127,7 @@ class Pixel(object):
     @rgb.setter
     def rgb(self, value):
         """Gets or sets the color with an (r, g, b) tuple"""
-        for v in value:
-            self._validate(v)
-
-        self._red = value[0]
-        self._green = value[1]
-        self._blue = value[2]
+        self._red, self._green, self._blue = (self._validate(v) for v in value)
         self._setpixel()
 
     def _validate(self, value):
@@ -155,8 +150,7 @@ class Pixel(object):
                 (self.red, self.green, self.blue)
 
         # Modified pictures lose their paths
-        self._picture._picture_path = None
-        self._picture._picture_modified = True
+        self._picture._setmodified()
 
     def __repr__(self):
         return "Pixel (red: {0}, green: {1}, blue: {2})"\
@@ -184,7 +178,7 @@ class Picture(object):
         # automatically so (r, g, b) tuples can be used
         # everywhere.
         elif path is not None:
-            self._image = np.array(Image.open(path).convert("RGB"))
+            self._image = np.array(Image.open(path).convert("RGB"), dtype=np.uint8)
             self._path = os.path.abspath(path)
             self._format = imghdr.what(path)
 
@@ -193,16 +187,19 @@ class Picture(object):
             if color is None:
                 color = (0, 0, 0)
 
-            self._image = np.zeros((size[1], size[0], 3), "uint8")
+            self._image = np.zeros((size[1], size[0], 3), dtype=np.uint8)
             self._image[:, :] = color
             self._path = None
             self._format = None
         elif image is not None:
-            self._image = np.array(image)
+            self._image = np.array(image, dtype=np.uint8)
             self._path = None
             self._format = None
         elif array is not None:
-            self._image = array
+            if array.dtype == np.dtype("uint8"):
+                self._image = array
+            else:
+                self._image = array.astype(np.uint8)
             self._path = None
             self._format = None
 
@@ -229,6 +226,10 @@ class Picture(object):
     @staticmethod
     def from_array(array):
         return Picture(array=array)
+
+    @staticmethod
+    def from_size(size, color=None):
+        return Picture(size=size, color=color)
 
     def save(self, path):
         """Saves the picture to the given path."""
@@ -259,15 +260,13 @@ class Picture(object):
 
     @size.setter
     def size(self, value):
-        try:
+        if isinstance(value, tuple) and len(value) == 2:
             # Don't resize if no change in size
             if (value[0] != self.width) or (value[1] != self.height):
                 new_size = (int(value[0]), int(value[1]))
                 self._image = np.array(Image.fromarray(self._image).resize(new_size))
-
-                self._modified = True
-                self._path = None
-        except TypeError:
+                self._setmodified()
+        else:
             raise TypeError("Expected (width, height), but got {0} instead!".format(value))
 
     @property
@@ -322,6 +321,10 @@ class Picture(object):
         """
         rgb = self._image[self.height - xy[1] - 1, xy[0]]
         return Pixel(self, self._image, xy[0], xy[1], rgb)
+
+    def _setmodified(self):
+        self._modified = True
+        self._path = None
 
     def _getdim(self, dim):
         return self._image[:, :, dim]
@@ -453,6 +456,8 @@ class Picture(object):
                 self._image[src_key[1], src_key[0]] = value._image
             else:
                 raise TypeError("Invalid value type")
+
+            self._setmodified()
         else:
             raise TypeError("Invalid key type")
 

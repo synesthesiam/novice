@@ -3,7 +3,7 @@ notebook:
 	ipython notebook --pylab=inline example.ipynb
 
 test:
-	nosetests novice/test
+	nosetests image_novice/test
 
 register:
 	python setup.py register
