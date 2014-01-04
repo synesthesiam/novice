@@ -64,7 +64,6 @@ def new(size, color=None):
 def copy(image):
     """
     Creates a Picture using the supplied image data
-    (e.g., skimage.data.elephant()).
     """
     return Picture(image=image)
 
@@ -369,7 +368,7 @@ class Picture(object):
         self._setdim(slice(None), value)
 
     def copy(self):
-        return Picture.from_image(Image.fromarray(self._image))
+        return Picture.from_array(self._image.copy())
 
     def _inflate(self, img):
         """Returns resized image using inflation factor (nearest neighbor)"""

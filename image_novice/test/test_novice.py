@@ -209,10 +209,11 @@ class TestNovice(TestCase):
         sliced_pic = pic[::2, ::2]
         assert_equal(sliced_pic._image, novice.Picture(array=array[::2, ::2])._image)
 
-    #def test_slicing(self):
-        #cut = 40
-        #pic = novice.open(self.sample_path)
-        #rest = pic.width - cut
-        #temp = pic[:cut, :].copy()
-        #pic[:rest, :] = pic[cut:, :]
-        #pic[rest:, :] = temp
+    def test_slicing(self):
+        cut = 40
+        pic = novice.open(self.sample_path)
+        rest = pic.width - cut
+        temp = pic[:cut, :].copy()
+        pic[:rest, :] = pic[cut:, :]
+        pic[rest:, :] = temp
+
