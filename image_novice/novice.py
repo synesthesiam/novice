@@ -1,19 +1,20 @@
 """
-novice
-==============
+image_novice
+============
 A special Python image submodule for beginners.
 
 Description
 -----------
-novice provides a simple image manipulation interface for beginners.
-It allows for easy loading, manipulating, and saving of image files.
+The image novice module provides a simple image manipulation interface for
+beginners.  It allows for easy loading, manipulating, and saving of image
+files.
 
 NOTE: This module uses the Cartesian coordinate system!
 
 Example
 -------
 
-    >>> import image_novice as novice         # special submodule for beginners
+    >>> from image_novice import novice       # special submodule for beginners
 
     >>> picture = novice.open('sample.png')   # create a picture object from a file
     >>> print picture.format                  # pictures know their format...
@@ -43,31 +44,106 @@ Example
     >>> print picture.modified                # and is now in sync
     False
 """
+
 import os, numpy as np, imghdr
-from colors import *
+import colors
 from PIL import Image
 from io import BytesIO
 
+# Create color name dict using the constants defined in colors.py
+color_names = { n.lower().replace("_", " ") : colors.__dict__[n]
+                for n in dir(colors)
+                if not n.startswith("__") }
+
+def _parse_color(c):
+    """Converts a color name or hex string to an RGB tuple.
+
+    Parameters
+    ----------
+    c : str or tuple
+        Color name, hex string (#RRGGBB) or RGB tuple
+
+    Returns
+    -------
+    rgb : tuple
+    
+    """
+    if isinstance(c, tuple):
+        if len(c) == 3:
+            # RGB tuple
+            return c
+        else:
+            msg = "Color tuple must be of the form (r, g, b)"
+            raise ValueError(msg)
+    elif isinstance(c, str):
+        if c.startswith("#") and len(c) == 7:
+            # #RRGGBB hex string
+            r, g, b = (int(c[i:i+2], base=16)
+                       for i in (1, 3, 5))
+            return (r, g, b)
+        elif c in color_names:
+            # Color name
+            return color_names[c]
+        else:
+            msg = "Expected color name or #RRGGBB, got: {0}"
+            raise ValueError(msg.format(c))
+    else:
+        msg = "Expected tuple or string, got: {0}"
+        raise ValueError(msg.format(c))
+
+# ---------------------------------------------------------------------------- 
+
 def open(path):
     """
-    Creates a new Picture object from the given image path
+    Creates a new Picture object from the given image path.
+
+    Parameters
+    ----------
+    path : str
+        File system path to the image
+
+    Returns
+    -------
+    p : Picture
+
     """
     return Picture(path=os.path.abspath(path))
 
-def new(size, color=None):
+def new(size, color="black"):
     """
     Create a new RGB picture of the given size, initialized to the
     given color or to black if none is provided.
+
+    Parameters
+    ----------
+    size : tuple of int
+        Size of the new image in pixels (width, height)
+    color : str or tuple, optional
+        Background color of the new image (default: black)
+        
+    Returns
+    -------
+    p : Picture
+
     """
     return Picture(size=size, color=color)
 
 def copy(image):
     """
     Creates a Picture using the supplied image data
+
+    Parameters
+    ----------
+    image : PIL Image
+    
+    Returns
+    -------
+    p : Picture
+
     """
     return Picture(image=image)
 
-# ================================================== 
+# ---------------------------------------------------------------------------- 
 
 class Pixel(object):
     def __init__(self, pic, image, x, y, rgb):
@@ -126,6 +202,10 @@ class Pixel(object):
     @rgb.setter
     def rgb(self, value):
         """Gets or sets the color with an (r, g, b) tuple"""
+        # Allow color to be set by name or hex string
+        value = _parse_color(value)
+
+        # Ensure that RGB components are within range
         self._red, self._green, self._blue = (self._validate(v) for v in value)
         self._setpixel()
 
@@ -136,7 +216,8 @@ class Pixel(object):
             if (value < 0) or (value > 255):
                 raise ValueError()
         except ValueError:
-            raise ValueError("Expected an integer between 0 and 255, but got {0} instead!".format(value))
+            msg = "Expected an integer between 0 and 255, but got {0} instead!"
+            raise ValueError(msg.format(value))
 
         return value
 
@@ -155,10 +236,11 @@ class Pixel(object):
         return "Pixel (red: {0}, green: {1}, blue: {2})"\
             .format(self.red, self.green, self.blue)
 
-# ================================================== 
+# ----------------------------------------------------------------------------
 
 class Picture(object):
-    def __init__(self, path=None, size=None, color=None, image=None, array=None):
+    def __init__(self, path=None, size=None, color=None,
+                 image=None, array=None):
         """
         If 'path' is provided, open that file (the normal case).
         If 'size' is provided instead, create an image of that size.
@@ -177,7 +259,8 @@ class Picture(object):
         # automatically so (r, g, b) tuples can be used
         # everywhere.
         elif path is not None:
-            self._image = np.array(Image.open(path).convert("RGB"), dtype=np.uint8)
+            self._image = np.array(Image.open(path).convert("RGB"),
+                                   dtype=np.uint8)
             self._path = os.path.abspath(path)
             self._format = imghdr.what(path)
 
@@ -185,6 +268,8 @@ class Picture(object):
         elif size is not None:
             if color is None:
                 color = (0, 0, 0)
+            else:
+                color = _parse_color(color)
 
             self._image = np.zeros((size[1], size[0], 3), dtype=np.uint8)
             self._image[:, :] = color
@@ -266,7 +351,8 @@ class Picture(object):
                 self._image = np.array(Image.fromarray(self._image).resize(new_size))
                 self._setmodified()
         else:
-            raise TypeError("Expected (width, height), but got {0} instead!".format(value))
+            msg = "Expected (width, height), but got {0} instead!"
+            raise TypeError(msg.format(value))
 
     @property
     def width(self):
@@ -288,7 +374,10 @@ class Picture(object):
 
     @property
     def inflation(self):
-        """Gets or sets the inflation factor (each pixel will be an NxN block for factor N)"""
+        """Gets or sets the inflation factor.  Each pixel will be an NxN block
+        for factor N.
+        
+        """
         return self._inflation
 
     @inflation.setter
@@ -299,7 +388,8 @@ class Picture(object):
                 raise ValueError()
             self._inflation = value
         except ValueError:
-            raise ValueError("Expected inflation factor to be an integer greater than zero")
+            msg = "Expected inflation factor to be an integer greater than zero"
+            raise ValueError(msg)
 
     def _repr_png_(self):
         """Returns an Image for display in an IPython console"""
@@ -365,6 +455,7 @@ class Picture(object):
     @rgb.setter
     def rgb(self, value):
         """Gets or sets the color with an (r, g, b) tuple"""
+        value = _parse_color(value)
         self._setdim(slice(None), value)
 
     def copy(self):
@@ -448,13 +539,13 @@ class Picture(object):
             pic[::2, ::2] = (255, 255, 255)     # Make every other pixel white
         """
         if isinstance(key, tuple) and len(key) == 2:
-            if isinstance(value, tuple):
-                self[key[0], key[1]].rgb = value
-            elif isinstance(value, Picture):
+            if isinstance(value, Picture):
+                # value is another Picture
                 src_key = self._verify_key(key)
                 self._image[src_key[1], src_key[0]] = value._image
             else:
-                raise TypeError("Invalid value type")
+                # Assume value is a color
+                self[key[0], key[1]].rgb = value
 
             self._setmodified()
         else:

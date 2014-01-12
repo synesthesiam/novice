@@ -7,7 +7,7 @@
 
 import os, tempfile
 import numpy as np
-import image_novice as novice
+from image_novice import novice
 from numpy.testing import TestCase, assert_equal, assert_raises, assert_allclose
 
 def _array_2d_to_RGB(array):
@@ -68,7 +68,7 @@ class TestNovice(TestCase):
     def test_pixel_rgb(self):
         pic = novice.Picture.from_size((3, 3), color=(10, 10, 10))
         pixel = pic[0, 0]
-        pixel.rgb = np.arange(3)
+        pixel.rgb = tuple(np.arange(3))
 
         assert_equal(pixel.rgb, np.arange(3))
         for i, channel in enumerate((pixel.red, pixel.green, pixel.blue)):
@@ -216,4 +216,20 @@ class TestNovice(TestCase):
         temp = pic[:cut, :].copy()
         pic[:rest, :] = pic[cut:, :]
         pic[rest:, :] = temp
+
+    def test_color_names(self):
+        # Color name
+        pic = novice.new((10, 10), color="black")
+        for p in pic:
+            assert_equal(p.rgb, (0, 0, 0))
+
+        # Hex string
+        pic = novice.new((10, 10), color="#AABBCC")
+        for p in pic:
+            assert_equal(p.rgb, (170, 187, 204))
+
+        # Tuple
+        pic = novice.new((10, 10), color=(23, 47, 99))
+        for p in pic:
+            assert_equal(p.rgb, (23, 47, 99))
 
